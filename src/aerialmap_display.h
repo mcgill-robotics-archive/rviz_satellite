@@ -16,7 +16,7 @@
 #include <ros/ros.h>
 #include <ros/time.h>
 #include <rviz/display.h>
-#include <sensor_msgs/NavSatFix.h>
+#include <geographic_msgs/GeoPointStamped.h>
 
 #include <OGRE/OgreTexture.h>
 #include <OGRE/OgreMaterial.h>
@@ -87,14 +87,14 @@ protected:
   virtual void subscribe();
   virtual void unsubscribe();
 
-  void navFixCallback(const sensor_msgs::NavSatFixConstPtr &msg);
+  void navFixCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
 
   void loadImagery();
 
   void assembleScene();
 
   void clear();
-  
+
   void clearGeometry();
 
   void transformAerialMap();
@@ -133,7 +133,7 @@ protected:
   //  tile management
   bool dirty_;
   bool received_msg_;
-  sensor_msgs::NavSatFix ref_fix_;
+  geographic_msgs::GeoPointStamped ref_fix_;
   std::shared_ptr<TileLoader> loader_;
 };
 

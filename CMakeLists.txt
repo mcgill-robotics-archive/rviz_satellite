@@ -31,13 +31,13 @@ if(NOT OGRE_OV_FOUND)
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
+  geographic_msgs
   nav_msgs
   roscpp
   rviz
-  sensor_msgs
 )
 
-catkin_package(CATKIN_DEPENDS nav_msgs sensor_msgs)
+catkin_package(CATKIN_DEPENDS geographic_msgs nav_msgs)
 
 set(${PROJECT_NAME}_SOURCES
   src/aerialmap_display.cpp

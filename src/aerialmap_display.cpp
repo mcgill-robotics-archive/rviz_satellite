@@ -82,7 +82,7 @@ AerialMapDisplay::AerialMapDisplay()
 
   topic_property_ = new RosTopicProperty(
       "Topic", "", QString::fromStdString(
-                       ros::message_traits::datatype<sensor_msgs::NavSatFix>()),
+                       ros::message_traits::datatype<geographic_msgs::GeoPointStamped>()),
       "nav_msgs::Odometry topic to subscribe to.", this, SLOT(updateTopic()));
 
   frame_property_ = new TfFrameProperty("Robot frame", "world",
@@ -284,15 +284,15 @@ void AerialMapDisplay::update(float, float) {
 }
 
 void
-AerialMapDisplay::navFixCallback(const sensor_msgs::NavSatFixConstPtr &msg) {
+AerialMapDisplay::navFixCallback(const geographic_msgs::GeoPointStampedConstPtr &msg) {
   // If the new (lat,lon) falls into a different tile then we have some
   // reloading to do.
   if (!received_msg_ ||
-      (loader_ && !loader_->insideCentreTile(msg->latitude, msg->longitude) &&
+      (loader_ && !loader_->insideCentreTile(msg->position.latitude, msg->position.longitude) &&
        dynamic_reload_property_->getValue().toBool())) {
     ref_fix_ = *msg;
-    ROS_INFO("Reference point set to: %.12f, %.12f", ref_fix_.latitude,
-             ref_fix_.longitude);
+    ROS_INFO("Reference point set to: %.12f, %.12f", ref_fix_.position.latitude,
+             ref_fix_.position.longitude);
     setStatus(StatusProperty::Warn, "Message", "Loading map tiles.");
 
     //  re-load imagery
@@ -305,7 +305,7 @@ AerialMapDisplay::navFixCallback(const sensor_msgs::NavSatFixConstPtr &msg) {
 void AerialMapDisplay::loadImagery() {
   //  cancel current imagery, if any
   loader_.reset();
-  
+
   if (!received_msg_) {
     //  no message received from publisher
     return;
@@ -316,8 +316,8 @@ void AerialMapDisplay::loadImagery() {
   }
 
   try {
-    loader_.reset(new TileLoader(object_uri_, ref_fix_.latitude,
-                                 ref_fix_.longitude, zoom_, blocks_, this));
+    loader_.reset(new TileLoader(object_uri_, ref_fix_.position.latitude,
+                                 ref_fix_.position.longitude, zoom_, blocks_, this));
   } catch (std::exception &e) {
     setStatus(StatusProperty::Error, "Message", QString(e.what()));
     return;
@@ -340,14 +340,14 @@ void AerialMapDisplay::assembleScene() {
     return; //  nothing to update
   }
   dirty_ = false;
-  
+
   if (!loader_) {
     return; //  no tiles loaded, don't do anything
   }
-  
+
   //  get rid of old geometry, we will re-build this
   clearGeometry();
-  
+
   //  iterate over all tiles and create an object for each of them
   for (const TileLoader::MapTile &tile : loader_->tiles()) {
     // NOTE(gareth): We invert the y-axis so that positive y corresponds
@@ -507,7 +507,7 @@ void AerialMapDisplay::transformAerialMap() {
   pose.position.x = 0;
   pose.position.y = 0;
   pose.position.z = 0;
-  
+
   const std::string frame = frame_property_->getFrameStd();
   Ogre::Vector3 position{0, 0, 0};
   Ogre::Quaternion orientation{1, 0, 0, 0};
@@ -540,7 +540,7 @@ void AerialMapDisplay::transformAerialMap() {
   // force aerial imagery on ground
   position.z = 0;
   scene_node_->setPosition(position);
-  
+
   const int convention = frame_convention_property_->getOptionInt();
   if (convention == FRAME_CONVENTION_XYZ_ENU) {
     // ENU corresponds to our default drawing method
